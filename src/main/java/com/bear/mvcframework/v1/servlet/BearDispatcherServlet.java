@@ -1,4 +1,4 @@
-package com.bear.mvcframework.v1;
+package com.bear.mvcframework.v1.servlet;
 
 import javax.servlet.http.HttpServlet;
 
