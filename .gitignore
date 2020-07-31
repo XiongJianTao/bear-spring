@@ -1,4 +1,23 @@
 /target/
 .gitignore
-.idea/
+
 spring-bear.iml
+
+*.class
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### log ###
+log.txt
+log.txt.*
+*.log
+
+!.mvn/wrapper/maven-wrapper.jar
+.svn/
+**/.svn/
+.metadata/
+**/.metadata/
