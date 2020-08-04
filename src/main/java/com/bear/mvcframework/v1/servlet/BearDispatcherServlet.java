@@ -3,7 +3,6 @@ package com.bear.mvcframework.v1.servlet;
 import com.bear.mvcframework.v1.annotation.BearAutowired;
 import com.bear.mvcframework.v1.annotation.BearController;
 import com.bear.mvcframework.v1.annotation.BearRequestMapping;
-import com.bear.mvcframework.v1.annotation.BearRequestParam;
 import com.bear.mvcframework.v1.annotation.BearService;
 
 import javax.servlet.ServletConfig;
@@ -14,7 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,7 +35,7 @@ public class BearDispatcherServlet extends HttpServlet {
     private final Map<String, Object> IOC = new HashMap<>();
 
     //
-    private final Map<String, Method> HandlerMapping = new HashMap<>();
+    private final List<HandlerMapping<?>> HandlerMapping = new ArrayList<>();
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -45,40 +43,30 @@ public class BearDispatcherServlet extends HttpServlet {
     }
 
     private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String contentPath = req.getRequestURI();
         Map<String, String[]> parameterMap = req.getParameterMap();
 
-        if (!this.HandlerMapping.containsKey(contentPath)) {
+        HandlerMapping handlerMapping = getHandler(req);
+        if (handlerMapping == null) {
             resp.getWriter().write("404 Not Found!!!");
             return;
         }
-        Method method = this.HandlerMapping.get(contentPath);
+        Method method = null;
 
         // 获取方法的形参列表
-        Class<?>[] parameterTypes = method.getParameterTypes();
+        Class<?>[] parameterTypes = handlerMapping.getParamTypes();
 
         // 形参对应的值数组
         Object[] paramValues = new Object[parameterTypes.length];
 
-        for (int i = 0; i < parameterTypes.length; i++) {
-            Class<?> parameterType = parameterTypes[i];
-            if (parameterType == HttpServletRequest.class) {
-                paramValues[i] = req;
-            } else if (parameterType == HttpServletResponse.class) {
-                paramValues[i] = resp;
-            } else if (parameterType == String.class) {
-                Annotation[][] pa = method.getParameterAnnotations();
-                for (int j = 0; j < pa.length; j++) {
-                    for (Annotation annotation : pa[j]) {
-                        if (annotation instanceof BearRequestParam) {
-                            String paramName = ((BearRequestParam) annotation).value();
-                            if (parameterMap.containsKey(paramName)) {
-                                paramValues[i] = convert(parameterType, Arrays.toString(parameterMap.get(paramName)));
-                            }
-                        }
-                    }
-                }
+        for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
+            String value = Arrays.toString(param.getValue())
+                    .replaceAll("\\[]", "")
+                    .replaceAll("\\s", ",");
+            if (!handlerMapping.getParamIndexMapping().containsKey(param.getKey())) {
+                continue;
             }
+            int index = (int) handlerMapping.getParamIndexMapping().get(param.getKey());
+            paramValues[index] = value;
         }
         // 获取方法的类名称
         String beanName = toLowerFirstCase(method.getDeclaringClass().getSimpleName());
@@ -88,6 +76,19 @@ public class BearDispatcherServlet extends HttpServlet {
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
+    }
+
+    private HandlerMapping getHandler(HttpServletRequest req) {
+        if (HandlerMapping.size() == 0) {
+            return null;
+        }
+        String uri = req.getRequestURI();
+        for (HandlerMapping handlerMapping : this.HandlerMapping) {
+            if (handlerMapping.getUrl().equals(uri)) {
+                return handlerMapping;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -139,10 +140,8 @@ public class BearDispatcherServlet extends HttpServlet {
                 }
                 BearRequestMapping bearRequestMapping = method.getAnnotation(BearRequestMapping.class);
                 String url = ("/" + baseUrl + "/" + bearRequestMapping.value()).replaceAll("/+", "/");
-                if (this.HandlerMapping.containsKey(url)) {
-                    throw new Exception("The " + url + " is exists: " + method.getName());
-                }
-                this.HandlerMapping.put(url, method);
+
+                this.HandlerMapping.add(new HandlerMapping(url, entry.getValue(), method));
             }
         }
     }
