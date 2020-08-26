@@ -8,6 +8,7 @@ import com.bear.framework.beans.support.BearDefaultListableBeanFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * IOC
@@ -17,6 +18,12 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
     private String[] configLocations;
 
     private BearBeanDefinitionReader reader;
+
+    // 单例的IOC容器缓存
+    private Map<String, Object> singletonObjects = new ConcurrentHashMap<String, Object>();
+
+    //通用的IOC容器
+    private Map<String, BearBeanWrapper> factoryBeanInstance = new ConcurrentHashMap<>();
 
     BearApplicationContext(String... configLocations) {
         this.configLocations = configLocations;
@@ -47,7 +54,11 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
         for (Map.Entry<String, BearBeanDefinition> beanDefinitionEntry : super.beanDefinitionMap.entrySet()) {
             String beanName = beanDefinitionEntry.getKey();
             if (!beanDefinitionEntry.getValue().isLazyInt()) {
-                getBean(beanName);
+                try {
+                    getBean(beanName);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -59,12 +70,18 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
     }
 
     @Override
-    public Object getBean(String beanName) {
+    public Object getBean(String beanName) throws Exception {
         // 1、初始化
-        instanceBean(beanName, new BearBeanDefinition());
+        BearBeanWrapper bearBeanWrapper = instanceBean(beanName, new BearBeanDefinition());
 
-        // 2、注入
-        populateBean(beanName, new BearBeanDefinition(), new BearBeanWrapper());
+        // 2、拿到BearBeanWrapper之后，把BearBeanWrapper
+//        if (this.factoryBeanInstance.containsKey(beanName)) {
+//            throw new Exception("The " + beanName + "is exists");
+//        }
+        this.factoryBeanInstance.put(beanName, bearBeanWrapper);
+
+        // 3、注入
+        populateBean(beanName, new BearBeanDefinition(), bearBeanWrapper);
 
         return null;
     }
@@ -73,7 +90,33 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
 
     }
 
-    private void instanceBean(String beanName, BearBeanDefinition bearBeanDefinition) {
+    private BearBeanWrapper instanceBean(String beanName, BearBeanDefinition bearBeanDefinition) {
+        // 1、拿到要實例化的對象的类名
+        String className = bearBeanDefinition.getBeanClassName();
+        // 2、反射实例化，得到一个对象
+        Object instance = null;
+        try {
+            // 假设默认是单例
+            if (this.singletonObjects.containsKey(className)) {
+                instance = this.singletonObjects.get(className);
+            } else {
+                Class<?> clazz = Class.forName(className);
+                instance = clazz.newInstance();
+                this.singletonObjects.put(className, instance);
+            }
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
 
+        // 3、把这个对象封装到BeanWrapped中
+        BearBeanWrapper beanWrapper = new BearBeanWrapper(instance);
+
+        // 4、把BearBeanWrapper存到IOC容器中
+
+        return beanWrapper;
     }
 }

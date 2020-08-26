@@ -9,6 +9,14 @@ package com.bear.framework.beans;
  */
 public class BearBeanWrapper {
 
+    private Object wrappedInstance;
+
+    private Class<?> wrappedClass;
+
+    public BearBeanWrapper(Object wrappedInstance) {
+        this.wrappedInstance = wrappedInstance;
+    }
+
     public Object getWrappedInstance() {
         return null;
     }

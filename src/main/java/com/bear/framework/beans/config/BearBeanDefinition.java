@@ -18,4 +18,6 @@ public class BearBeanDefinition {
 
     private String factoryBeanName;
 
+    private boolean isSingleton = true;
+
 }
