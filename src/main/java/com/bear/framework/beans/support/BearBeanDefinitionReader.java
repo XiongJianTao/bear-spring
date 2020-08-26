@@ -69,6 +69,7 @@ public class BearBeanDefinitionReader {
 
     /**
      * 把配置文件中扫描到的所有的配置信息转换为BearBeanDefinition对象， 以便于之后IOC容器操作
+     *
      * @return
      */
     public List<BearBeanDefinition> loadBeanDefinitions() {
@@ -84,7 +85,8 @@ public class BearBeanDefinitionReader {
     }
 
     /**
-     *  把每一个配置信息解析成一个BeanDefinition
+     * 把每一个配置信息解析成一个BeanDefinition
+     *
      * @param className 类名称
      * @return BeanDefinition
      */
