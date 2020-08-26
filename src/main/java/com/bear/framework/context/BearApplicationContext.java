@@ -20,6 +20,11 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
 
     BearApplicationContext(String... configLocations) {
         this.configLocations = configLocations;
+        try {
+            refresh();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
