@@ -4,17 +4,5 @@
 
 <web-app>
   <display-name>Archetype Created Web Application</display-name>
-  <servlet>
-    <servlet-name>bearmvc</servlet-name>
-    <servlet-class>com.bear.mvcframework.v1.servlet.BearDispatcherServlet</servlet-class>
-    <init-param>
-      <param-name>contextConfigLocation</param-name>
-      <param-value>application.properties</param-value>
-    </init-param>
-  </servlet>
-  
-  <servlet-mapping>
-    <servlet-name>bearmvc</servlet-name>
-    <url-pattern>/*</url-pattern>
-  </servlet-mapping>
+
 </web-app>
