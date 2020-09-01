@@ -47,7 +47,7 @@ public class BearBeanDefinitionReader {
     }
 
     private void doScanner(String scanPackage) {
-        URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.", "/"));
+        URL url = this.getClass().getClassLoader().getResource(scanPackage.replaceAll("\\.", "/"));
         File classPath = new File(url.getFile());
         for (File file : classPath.listFiles()) {
             if (file.isDirectory()) {
@@ -94,16 +94,26 @@ public class BearBeanDefinitionReader {
         try {
             Class<?> beanClass = Class.forName(className);
             // 有可能是一个接口，用他的实现类作为beanClassName
+            BearBeanDefinition beanDefinition = new BearBeanDefinition();
             if (!beanClass.isInterface()) {
-                BearBeanDefinition beanDefinition = new BearBeanDefinition();
-                beanDefinition.setBeanClassName(className);
+                beanDefinition.setBeanClassName(toLowerFirstCase(beanClass.getSimpleName()));
                 beanDefinition.setFactoryBeanName(beanClass.getSimpleName());
-                return beanDefinition;
+
+            } else {
+                Class<?>[] interfaces = beanClass.getInterfaces();
+                for (Class<?> anInterface : interfaces) {
+                    beanDefinition.setBeanClassName(anInterface.getName());
+                    beanDefinition.setFactoryBeanName(beanClass.getName());
+                }
             }
+            return beanDefinition;
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
         return null;
     }
 
+    public String toLowerFirstCase(String benaName) {
+        return Character.toLowerCase(benaName.charAt(0)) + benaName.substring(1);
+    }
 }

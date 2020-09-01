@@ -17,11 +17,16 @@ public class BearBeanWrapper {
         this.wrappedInstance = wrappedInstance;
     }
 
+    public BearBeanWrapper(Object wrappedInstance, Class<?> wrappedClass) {
+        this.wrappedInstance = wrappedInstance;
+        this.wrappedClass = wrappedClass;
+    }
+
     public Object getWrappedInstance() {
-        return null;
+        return this.wrappedInstance;
     }
 
     public Class<?> getWrappedClass() {
-        return null;
+        return this.wrappedClass;
     }
 }

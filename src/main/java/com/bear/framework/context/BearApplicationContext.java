@@ -1,13 +1,19 @@
 package com.bear.framework.context;
 
+import com.bear.framework.annotation.BearAutowired;
+import com.bear.framework.annotation.BearController;
+import com.bear.framework.annotation.BearService;
 import com.bear.framework.beans.BearBeanFactory;
 import com.bear.framework.beans.BearBeanWrapper;
 import com.bear.framework.beans.config.BearBeanDefinition;
+import com.bear.framework.beans.config.BearBeanPostProcessor;
 import com.bear.framework.beans.support.BearBeanDefinitionReader;
 import com.bear.framework.beans.support.BearDefaultListableBeanFactory;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -25,7 +31,7 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
     //通用的IOC容器
     private Map<String, BearBeanWrapper> factoryBeanInstance = new ConcurrentHashMap<>();
 
-    BearApplicationContext(String... configLocations) {
+    public BearApplicationContext(String... configLocations) {
         this.configLocations = configLocations;
         try {
             refresh();
@@ -71,26 +77,58 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
 
     @Override
     public Object getBean(String beanName) throws Exception {
+        BearBeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
         // 1、初始化
-        BearBeanWrapper bearBeanWrapper = instanceBean(beanName, new BearBeanDefinition());
+        Object instace = instanceBean(beanName, this.beanDefinitionMap.get(beanName));
 
+        // 工厂模式 + 策略模式
+        BearBeanPostProcessor beanPostProcessor = new BearBeanPostProcessor();
+        beanPostProcessor.postProcessBeforeInitialization(instace, beanName);
+
+        BearBeanWrapper beanWrapper = new BearBeanWrapper(instace);
         // 2、拿到BearBeanWrapper之后，把BearBeanWrapper
 //        if (this.factoryBeanInstance.containsKey(beanName)) {
 //            throw new Exception("The " + beanName + "is exists");
 //        }
-        this.factoryBeanInstance.put(beanName, bearBeanWrapper);
+        this.factoryBeanInstance.put(beanName, beanWrapper);
 
+        beanPostProcessor.postProcessAfterInitialization(instace, beanName);
         // 3、注入
-        populateBean(beanName, new BearBeanDefinition(), bearBeanWrapper);
+        populateBean(beanName, new BearBeanDefinition(), beanWrapper);
 
-        return null;
+        return this.factoryBeanInstance.get(beanName).getWrappedInstance();
     }
 
     private void populateBean(String beanName, BearBeanDefinition bearBeanDefinition, BearBeanWrapper bearBeanWrapper) {
+        Object instance = bearBeanWrapper.getWrappedInstance();
 
+        Class<?> clazz = bearBeanWrapper.getWrappedClass();
+
+        // 判断只有加了注解的类才执行依赖注入
+        if (!(clazz.isAnnotationPresent(BearController.class) || clazz.isAnnotationPresent(BearService.class))) {
+            return;
+        }
+        // 获得所有的fields
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(BearAutowired.class)) {
+                BearAutowired autowired = field.getAnnotation(BearAutowired.class);
+                String autowiredBeanName = autowired.value().trim();
+                if ("".equals(autowiredBeanName)) {
+                    autowiredBeanName = field.getType().getName();
+                }
+
+                field.setAccessible(true);
+                try {
+                    field.set(instance, this.factoryBeanInstance.get(autowiredBeanName).getWrappedInstance());
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
-    private BearBeanWrapper instanceBean(String beanName, BearBeanDefinition bearBeanDefinition) {
+    private Object instanceBean(String beanName, BearBeanDefinition bearBeanDefinition) {
         // 1、拿到要實例化的對象的类名
         String className = bearBeanDefinition.getBeanClassName();
         // 2、反射实例化，得到一个对象
@@ -103,6 +141,7 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
                 Class<?> clazz = Class.forName(className);
                 instance = clazz.newInstance();
                 this.singletonObjects.put(className, instance);
+                this.singletonObjects.put(bearBeanDefinition.getFactoryBeanName(),instance);
             }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -112,11 +151,18 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
             e.printStackTrace();
         }
 
-        // 3、把这个对象封装到BeanWrapped中
-        BearBeanWrapper beanWrapper = new BearBeanWrapper(instance);
+        return instance;
+    }
 
-        // 4、把BearBeanWrapper存到IOC容器中
+    public String[] getBeanDefinitionNames() {
+        return this.beanDefinitionMap.keySet().toArray(new String[this.beanDefinitionMap.size()]);
+    }
 
-        return beanWrapper;
+    public int getBeanDefinitionCounts() {
+        return this.beanDefinitionMap.size();
+    }
+
+    public Properties getConfig() {
+        return this.reader.getConfig();
     }
 }
