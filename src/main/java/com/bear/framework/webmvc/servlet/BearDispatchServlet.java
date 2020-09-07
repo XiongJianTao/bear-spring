@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -37,11 +38,11 @@ public class BearDispatchServlet extends HttpServlet {
     private BearApplicationContext applicationContext;
 
     @Nullable
-    private List<BearHandlerMapping> handlerMappings = new ArrayList();
+    private List<BearHandlerMapping> handlerMappings = new ArrayList<>();
 
-    private Map<BearHandlerMapping, BearHandlerAdapter> HandlerAdapterMap = new ConcurrentHashMap<>();
+    private Map<BearHandlerMapping, BearHandlerAdapter> HandlerAdapters = new ConcurrentHashMap<>();
 
-    private List<BearViewResolver> viewResolvers;
+    private List<BearViewResolver> viewResolvers = new ArrayList<>();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -64,6 +65,7 @@ public class BearDispatchServlet extends HttpServlet {
 
         if (handler == null) {
             // 404
+            processDispatchResult(req, resp, new BearModelAndView("404"));
             return;
         }
 
@@ -73,16 +75,31 @@ public class BearDispatchServlet extends HttpServlet {
         // 3、真正的调用方法,返回modelAndView 存储了要传到页面上的值和模板名称
         BearModelAndView mv = ha.handle(req, resp, handler);
 
+        // 这一步才是真正的输出
         processDispatchResult(req, resp, mv);
     }
 
-    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, BearModelAndView mv) {
+    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, BearModelAndView mv) throws Exception {
+        // 把ModelAndView变成一个HTML、OutputStream、json、freemark、veolcity
         if (mv == null) {
             return;
+        }
+
+        // 如果ModelAndView不为null
+        if (this.viewResolvers.isEmpty()) {
+            for (BearViewResolver viewResolver : this.viewResolvers) {
+                BearView view = viewResolver.resolveViewName(mv.getView(), Locale.CHINESE);
+                view.render(mv.getModel(), req, resp);
+            }
         }
     }
 
     private BearHandlerAdapter getHandlerAdapter(BearHandlerMapping handler) {
+        if (this.HandlerAdapters.isEmpty()) {
+            return null;
+        }
+        BearHandlerAdapter ha = this.HandlerAdapters.get(handler);
+
         return null;
     }
 
@@ -172,7 +189,7 @@ public class BearDispatchServlet extends HttpServlet {
         // 把一个request请求变成一个handler，参数都是字符串的，自动配到handler中的形参
 
         for (BearHandlerMapping handlerMapping : this.handlerMappings) {
-            this.HandlerAdapterMap.put(handlerMapping, new BearHandlerAdapter());
+            this.HandlerAdapters.put(handlerMapping, new BearHandlerAdapter());
         }
     }
 

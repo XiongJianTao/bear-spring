@@ -1,5 +1,6 @@
 package com.bear.framework.webmvc.servlet;
 
+import java.io.File;
 import java.util.Locale;
 
 /**
@@ -11,11 +12,26 @@ import java.util.Locale;
  */
 public class BearViewResolver {
 
-    BearViewResolver(String templateRoot) {
+    private final String DEFAULT_TEMPLATE_SUFFX = ".html";
 
+    private File templateRootDir;
+
+    public BearViewResolver(String templateRoot) {
+        String templateRootPath = this.getClass().getClassLoader().getResource(templateRoot).getFile();
+        templateRootDir = new File(templateRootPath);
     }
 
     public BearView resolveViewName(String viewName, Locale locale) throws Exception {
-        return null;
+        if (viewName == null || "".equals(viewName.trim())) {
+            return null;
+        }
+
+        viewName = viewName.endsWith(DEFAULT_TEMPLATE_SUFFX) ? viewName : (viewName + DEFAULT_TEMPLATE_SUFFX);
+        File file = new File((templateRootDir.getPath() + "/" + viewName).replaceAll("/+", "/"));
+        return new BearView(file);
+    }
+
+    public File getTemplateDir() {
+        return templateRootDir;
     }
 }

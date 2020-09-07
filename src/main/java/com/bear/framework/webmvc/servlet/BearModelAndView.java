@@ -2,6 +2,8 @@ package com.bear.framework.webmvc.servlet;
 
 import com.sun.istack.internal.Nullable;
 
+import java.util.Map;
+
 /**
  * @author bear
  * @version 1.0
@@ -12,13 +14,33 @@ import com.sun.istack.internal.Nullable;
 public class BearModelAndView {
 
     @Nullable
-    private Object view;
+    private String view;
 
-//    @Nullable
-//    private ModelMap model;
+    @Nullable
+    private Map<String, ?> model;
 
-//    @Nullable
-//    private HttpStatus status;
+    public BearModelAndView(String view) {
+        this.view = view;
+    }
 
-    private boolean cleared = false;
+    public BearModelAndView(String view, Map<String, ?> model) {
+        this.view = view;
+        this.model = model;
+    }
+
+    public String getView() {
+        return view;
+    }
+
+    public void setView(String view) {
+        this.view = view;
+    }
+
+    public Map<String, ?> getModel() {
+        return model;
+    }
+
+    public void setModel(Map<String, ?> model) {
+        this.model = model;
+    }
 }
