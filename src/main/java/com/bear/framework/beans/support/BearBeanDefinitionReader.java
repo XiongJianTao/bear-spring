@@ -98,12 +98,13 @@ public class BearBeanDefinitionReader {
             if (!beanClass.isInterface()) {
                 beanDefinition.setBeanClassName(toLowerFirstCase(beanClass.getSimpleName()));
                 beanDefinition.setFactoryBeanName(beanClass.getSimpleName());
-
+                beanDefinition.setBeanClass(beanClass);
             } else {
                 Class<?>[] interfaces = beanClass.getInterfaces();
                 for (Class<?> anInterface : interfaces) {
                     beanDefinition.setBeanClassName(anInterface.getName());
                     beanDefinition.setFactoryBeanName(beanClass.getName());
+                    beanDefinition.setBeanClass(beanClass);
                 }
             }
             return beanDefinition;

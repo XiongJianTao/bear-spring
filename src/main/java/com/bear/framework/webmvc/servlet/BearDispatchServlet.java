@@ -35,14 +35,15 @@ public class BearDispatchServlet extends HttpServlet {
 
     private final String CONTEXT_CONFIG_LOCATION = "contextConfigLocation";
 
-    private BearApplicationContext applicationContext;
+    private BearApplicationContext context;
 
     @Nullable
-    private List<BearHandlerMapping> handlerMappings = new ArrayList<>();
+    private final List<BearHandlerMapping> handlerMappings = new ArrayList<BearHandlerMapping>();
 
-    private Map<BearHandlerMapping, BearHandlerAdapter> HandlerAdapters = new ConcurrentHashMap<>();
+    private final Map<BearHandlerMapping, BearHandlerAdapter> HandlerAdapters = new ConcurrentHashMap<>();
 
-    private List<BearViewResolver> viewResolvers = new ArrayList<>();
+    private final List<BearViewResolver> viewResolvers = new ArrayList<BearViewResolver>();
+
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -126,14 +127,18 @@ public class BearDispatchServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        String localtions = config.getInitParameter(CONTEXT_CONFIG_LOCATION);
         // 初始化ApplicationContext
-        applicationContext = new BearApplicationContext(localtions);
+        context = new BearApplicationContext(config.getInitParameter(CONTEXT_CONFIG_LOCATION));
         // 初始化SpringMVC 九大组件
-        initStrategies(applicationContext);
+        initStrategies(context);
     }
 
     protected void initStrategies(BearApplicationContext context) {
+        // 有九种策略
+        // 针对于每个用户请求， 都会经过一些处理的策略之后， 最终才能有结果输出
+        // 每种策略可以自定义干预， 但是最终的结果都是一致
+
+        // ============= 这里说的就是传说中的九大组件 ================
         // 初始化多文件上传组件
         initMultipartResolver(context);
 

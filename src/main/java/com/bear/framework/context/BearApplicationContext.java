@@ -94,15 +94,20 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
 
         beanPostProcessor.postProcessAfterInitialization(instace, beanName);
         // 3、注入
-        populateBean(beanName, new BearBeanDefinition(), beanWrapper);
+        populateBean(beanName, beanDefinition, beanWrapper);
 
         return this.factoryBeanInstance.get(beanName).getWrappedInstance();
+    }
+
+    @Override
+    public Object getBean(Class<?> clazz) throws Exception {
+        return null;
     }
 
     private void populateBean(String beanName, BearBeanDefinition bearBeanDefinition, BearBeanWrapper bearBeanWrapper) {
         Object instance = bearBeanWrapper.getWrappedInstance();
 
-        Class<?> clazz = bearBeanWrapper.getWrappedClass();
+        Class<?> clazz = bearBeanDefinition.getBeanClass();
 
         // 判断只有加了注解的类才执行依赖注入
         if (!(clazz.isAnnotationPresent(BearController.class) || clazz.isAnnotationPresent(BearService.class))) {

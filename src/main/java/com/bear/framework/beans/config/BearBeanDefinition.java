@@ -14,6 +14,8 @@ public class BearBeanDefinition {
 
     private String beanClassName;
 
+    private Class<?> beanClass;
+
     private boolean lazyInt = false;
 
     private String factoryBeanName;
