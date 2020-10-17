@@ -1,7 +1,5 @@
 package com.bear.framework.webmvc.servlet;
 
-import com.sun.istack.internal.Nullable;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -28,7 +26,7 @@ public class BearView {
         this.viewFile = viewFile;
     }
 
-    void render(@Nullable Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
+    void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
             throws Exception {
         StringBuffer sb = new StringBuffer();
 

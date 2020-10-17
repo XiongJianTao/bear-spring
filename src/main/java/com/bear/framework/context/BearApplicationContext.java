@@ -3,6 +3,7 @@ package com.bear.framework.context;
 import com.bear.framework.annotation.BearAutowired;
 import com.bear.framework.annotation.BearController;
 import com.bear.framework.annotation.BearService;
+import com.bear.framework.aop.BearAopProxy;
 import com.bear.framework.beans.BearBeanFactory;
 import com.bear.framework.beans.BearBeanWrapper;
 import com.bear.framework.beans.config.BearBeanDefinition;
@@ -29,7 +30,7 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
     private Map<String, Object> singletonObjects = new ConcurrentHashMap<String, Object>();
 
     //通用的IOC容器
-    private Map<String, BearBeanWrapper> factoryBeanInstance = new ConcurrentHashMap<>();
+    private Map<String, BearBeanWrapper> factoryBeanInstanceCache = new ConcurrentHashMap<>();
 
     public BearApplicationContext(String... configLocations) {
         this.configLocations = configLocations;
@@ -86,17 +87,19 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
         beanPostProcessor.postProcessBeforeInitialization(instace, beanName);
 
         BearBeanWrapper beanWrapper = new BearBeanWrapper(instace);
-        // 2、拿到BearBeanWrapper之后，把BearBeanWrapper
-//        if (this.factoryBeanInstance.containsKey(beanName)) {
-//            throw new Exception("The " + beanName + "is exists");
-//        }
-        this.factoryBeanInstance.put(beanName, beanWrapper);
+
+        // 创建一个代理的策略，看是CGLib还是用JDK
+        BearAopProxy proxy = null;
+        Object proxy1 = proxy.getProxy();
+
+
+        this.factoryBeanInstanceCache.put(beanName, beanWrapper);
 
         beanPostProcessor.postProcessAfterInitialization(instace, beanName);
         // 3、注入
         populateBean(beanName, beanDefinition, beanWrapper);
 
-        return this.factoryBeanInstance.get(beanName).getWrappedInstance();
+        return this.factoryBeanInstanceCache.get(beanName).getWrappedInstance();
     }
 
     @Override
@@ -125,7 +128,7 @@ public class BearApplicationContext extends BearDefaultListableBeanFactory imple
 
                 field.setAccessible(true);
                 try {
-                    field.set(instance, this.factoryBeanInstance.get(autowiredBeanName).getWrappedInstance());
+                    field.set(instance, this.factoryBeanInstanceCache.get(autowiredBeanName).getWrappedInstance());
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }

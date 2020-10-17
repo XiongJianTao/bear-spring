@@ -1,7 +1,5 @@
 package com.bear.framework.webmvc.servlet;
 
-import com.sun.istack.internal.Nullable;
-
 import java.util.Map;
 
 /**
@@ -13,10 +11,8 @@ import java.util.Map;
  */
 public class BearModelAndView {
 
-    @Nullable
     private String view;
 
-    @Nullable
     private Map<String, ?> model;
 
     public BearModelAndView(String view) {

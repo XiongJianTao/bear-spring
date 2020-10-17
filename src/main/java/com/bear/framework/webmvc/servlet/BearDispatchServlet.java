@@ -3,7 +3,6 @@ package com.bear.framework.webmvc.servlet;
 import com.bear.framework.annotation.BearController;
 import com.bear.framework.annotation.BearRequestMapping;
 import com.bear.framework.context.BearApplicationContext;
-import com.sun.istack.internal.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletConfig;
@@ -37,7 +36,6 @@ public class BearDispatchServlet extends HttpServlet {
 
     private BearApplicationContext context;
 
-    @Nullable
     private final List<BearHandlerMapping> handlerMappings = new ArrayList<BearHandlerMapping>();
 
     private final Map<BearHandlerMapping, BearHandlerAdapter> HandlerAdapters = new ConcurrentHashMap<>();
